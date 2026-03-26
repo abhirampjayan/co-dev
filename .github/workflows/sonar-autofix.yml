@@ -83,11 +83,15 @@ jobs:
         if: steps.fetch-issues.outputs.has_issues == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Claude Code auto-fix
+      - name: Claude Code auto-fix & PR creation
         if: steps.fetch-issues.outputs.has_issues == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config user.name "claude-autofix"
+          git config user.email "claude-bot@noreply.github.com"
+          
           BRANCH="fix/sonar-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
 
@@ -103,36 +107,5 @@ jobs:
           2. Fix each issue precisely — do NOT refactor unrelated code
           3. Run tests if available (npm test / pytest / etc.)
           4. If unsure about a fix, skip it
+          5. After fixing, commit the changes to the current branch, push it to origin, and use the 'gh' CLI to create a Pull Request against the main branch with the title '🤖 Auto-fix: SonarQube issues' and an explanation of your fixes. If 'gh pr create' fails due to GitHub Actions permissions, try to output a note but do not consider it a total failure if the remote branch was pushed.
           "
-
-      # Step 5: Commit and create PR
-      - name: Create PR
-        if: steps.fetch-issues.outputs.has_issues == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "claude-autofix"
-          git config user.email "claude-bot@noreply.github.com"
-
-          if git diff --quiet; then
-            echo "No changes — skipping PR"
-            exit 0
-          fi
-
-          BRANCH=$(git branch --show-current)
-          git add -A
-          git commit -m "fix: auto-resolve SonarQube issues [skip ci]"
-          git push origin "$BRANCH"
-
-          gh pr create \
-            --title "🤖 Auto-fix: SonarQube issues" \
-            --body "Automated PR by Claude Code.
-          
-          **Issues addressed:**
-          \`\`\`json
-          $(cat issues.json)
-          \`\`\`
-          
-          Please review before merging." \
-            --base main \
-            --head "$BRANCH"

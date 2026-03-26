@@ -1,0 +1,53 @@
+name: SonarQube Scan & Auto-Fix
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'  # Also run every 6 hours
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.organization=YOUR_ORG
+            -Dsonar.projectKey=YOUR_PROJECT_KEY
+
+      - name: Check for issues & trigger fix
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch open issues from SonarQube API
+          ISSUES=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=YOUR_PROJECT_KEY&resolved=false&types=CODE_SMELL,BUG,VULNERABILITY&ps=10&severities=CRITICAL,MAJOR")
+          
+          ISSUE_COUNT=$(echo "$ISSUES" | jq '.total')
+          echo "Found $ISSUE_COUNT issues"
+          
+          if [ "$ISSUE_COUNT" -gt 0 ]; then
+            # Save issues and trigger remediation
+            echo "$ISSUES" | jq '.issues[] | {
+              file: (.component | split(":") | last),
+              line: .line,
+              severity: .severity,
+              type: .type,
+              message: .message,
+              rule: .rule
+            }' > /tmp/issues.json
+            
+            # Trigger the fix workflow
+            gh workflow run auto-fix.yml \
+              -f issues="$(cat /tmp/issues.json | jq -s '.' | jq -c '.')"
+          fi

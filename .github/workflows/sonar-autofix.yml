@@ -1,0 +1,131 @@
+name: SonarQube Scan & Claude Code Auto-Fix
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'  # Periodic scan
+
+jobs:
+  scan-and-fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 1: Run SonarQube scan
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.organization=YOUR_ORG
+            -Dsonar.projectKey=YOUR_PROJECT_KEY
+
+      # Step 2: Wait for SonarQube to process
+      - name: Wait for analysis
+        run: sleep 30
+
+      # Step 3: Pull issues from SonarQube API (free!)
+      - name: Fetch issues from SonarQube API
+        id: fetch-issues
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ISSUES=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?\
+          componentKeys=YOUR_PROJECT_KEY&\
+          resolved=false&\
+          types=CODE_SMELL,BUG,VULNERABILITY&\
+          severities=CRITICAL,MAJOR,BLOCKER&\
+          ps=10")
+
+          COUNT=$(echo "$ISSUES" | jq '.total')
+          echo "Found $COUNT issues"
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "$ISSUES" | jq '[.issues[] | {
+              file: (.component | split(":") | last),
+              line: .line,
+              severity: .severity,
+              type: .type,
+              message: .message,
+              rule: .rule
+            }]' > issues.json
+            cat issues.json
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 4: Claude Code fixes (only if issues found)
+      - name: Setup Node.js
+        if: steps.fetch-issues.outputs.has_issues == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        if: steps.fetch-issues.outputs.has_issues == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Claude Code auto-fix
+        if: steps.fetch-issues.outputs.has_issues == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          BRANCH="fix/sonar-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+
+          ISSUES=$(cat issues.json)
+
+          claude --dangerously-skip-permissions -p "
+          You are fixing SonarQube issues. Here are the issues:
+
+          $ISSUES
+
+          Instructions:
+          1. Read each flagged file fully before editing
+          2. Fix each issue precisely — do NOT refactor unrelated code
+          3. Run tests if available (npm test / pytest / etc.)
+          4. If unsure about a fix, skip it
+          "
+
+      # Step 5: Commit and create PR
+      - name: Create PR
+        if: steps.fetch-issues.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "claude-autofix"
+          git config user.email "claude-bot@noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No changes — skipping PR"
+            exit 0
+          fi
+
+          BRANCH=$(git branch --show-current)
+          git add -A
+          git commit -m "fix: auto-resolve SonarQube issues [skip ci]"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "🤖 Auto-fix: SonarQube issues" \
+            --body "Automated PR by Claude Code.
+          
+          **Issues addressed:**
+          \`\`\`json
+          $(cat issues.json)
+          \`\`\`
+          
+          Please review before merging." \
+            --base main \
+            --head "$BRANCH"

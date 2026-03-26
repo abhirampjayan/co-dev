@@ -79,11 +79,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install GitHub Copilot CLI
-        if: steps.fetch-issues.outputs.has_issues == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh extension install github/gh-copilot
 
       - name: Copilot auto-fix & PR creation
         if: steps.fetch-issues.outputs.has_issues == 'true'

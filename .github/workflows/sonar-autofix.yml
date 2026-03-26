@@ -86,7 +86,7 @@ jobs:
       - name: Copilot auto-fix & PR creation
         if: steps.fetch-issues.outputs.has_issues == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
         run: |
           git config user.name "copilot-autofix"
           git config user.email "copilot-bot@noreply.github.com"

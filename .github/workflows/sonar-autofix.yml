@@ -18,16 +18,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
       # Step 1: Run SonarQube scan
       - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v2
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          args: >
-            -Dsonar.organization=${{ secrets.YOUR_ORG }}
-            -Dsonar.projectKey=${{ secrets.YOUR_PROJECT_KEY }}
 
       # Step 2: Wait for SonarQube to process
       - name: Wait for analysis
@@ -41,7 +48,7 @@ jobs:
         run: |
           ISSUES=$(curl -s -u "$SONAR_TOKEN:" \
             "https://sonarcloud.io/api/issues/search?\
-          componentKeys=YOUR_PROJECT_KEY&\
+          componentKeys=abhirampjayan_co-dev&\
           resolved=false&\
           types=CODE_SMELL,BUG,VULNERABILITY&\
           severities=CRITICAL,MAJOR,BLOCKER&\

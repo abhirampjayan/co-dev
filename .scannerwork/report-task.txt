@@ -1,0 +1,7 @@
+organization=abhirampjayan
+projectKey=abhirampjayan_co-dev
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.84066
+dashboardUrl=https://sonarcloud.io/dashboard?id=abhirampjayan_co-dev&branch=main
+ceTaskId=AZ0qiFRh3piXqxdfQ2sj
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ0qiFRh3piXqxdfQ2sj

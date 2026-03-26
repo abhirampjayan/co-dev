@@ -1,0 +1,10 @@
+[
+  {
+    "file": "src/app/page.tsx",
+    "line": 2,
+    "severity": "MAJOR",
+    "type": "CODE_SMELL",
+    "message": "Specify the rules you want to disable.",
+    "rule": "typescript:S7724"
+  }
+]

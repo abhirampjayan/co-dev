@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, no-console, eqeqeq */
 // @ts-nocheck
 
 import Image from "next/image";

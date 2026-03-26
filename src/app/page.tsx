@@ -1,6 +1,48 @@
 import Image from "next/image";
+import React, { useState, useEffect } from "react"; // Unused import
 
 export default function Home() {
+  // Code Smell 1: Unused variable
+  const unusedVariable = "This is never used";
+  
+  // Code Smell 2: Using 'any' type
+  const [data, setData] = useState<any>(null);
+
+  // Code Smell 3: Empty code block
+  try {
+    // doing nothing
+  } catch (e) {
+  }
+
+  // Code Smell 4: Redundant boolean literal & '==' usage
+  const isActive = true;
+  if (isActive == true) {
+    console.log("Active!");
+  }
+
+  // Code Smell 5: Duplicate string literals (magic strings)
+  const status1 = "completed";
+  const status2 = "completed";
+  const status3 = "completed";
+
+  // Code Smell 6: Commented out code
+  // const oldFunction = () => {
+  //   return "This is commented out";
+  // };
+
+  // Code Smell 7: nested loops/callbacks (Cognitive complexity)
+  const complexFunction = () => {
+    for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+            if (i == j) {
+                setTimeout(() => {
+                    console.log("Nested heavily");
+                }, 100);
+            }
+        }
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">

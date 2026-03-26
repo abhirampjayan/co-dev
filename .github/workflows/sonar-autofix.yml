@@ -93,8 +93,7 @@ jobs:
 
           ISSUES=$(cat issues.json)
 
-          gh copilot suggest "
-          You are fixing SonarQube issues. Here are the issues:
+          PROMPT="You are fixing SonarQube issues. Here are the issues:
 
           $ISSUES
 
@@ -103,6 +102,7 @@ jobs:
           2. Fix each issue precisely — do NOT refactor unrelated code
           3. Run tests if available (npm test / pytest / etc.)
           4. If unsure about a fix, skip it
-          5. After fixing, commit the changes to the current branch, push it to origin, and use the 'gh' CLI to create a Pull Request against the main branch with the title '🤖 Auto-fix: SonarQube issues' and an explanation of your fixes. If 'gh pr create' fails due to GitHub Actions permissions, try to output a note but do not consider it a total failure if the remote branch was pushed.
-          6. DO NOT fix issues by simply adding suppression comments (e.g. /* eslint-disable */, // @ts-ignore, // NOSONAR). You MUST resolve the underlying code smell or bug logically.
-          "
+          5. After fixing, commit the changes to the current branch, push it to origin, and use the 'gh' CLI to create a Pull Request against the main branch with the title '🤖 Auto-fix: SonarQube Issues'
+          6. DO NOT fix issues by simply adding suppression comments (e.g. /* eslint-disable */, // @ts-ignore, // NOSONAR). You MUST resolve the underlying code smell or bug logically."
+
+          gh copilot suggest -p "$PROMPT"

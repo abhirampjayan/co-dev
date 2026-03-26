@@ -21,8 +21,8 @@ jobs:
           SONAR_HOST_URL: https://sonarcloud.io
         with:
           args: >
-            -Dsonar.organization=YOUR_ORG
-            -Dsonar.projectKey=YOUR_PROJECT_KEY
+            -Dsonar.organization=${{ secrets.YOUR_ORG }}
+            -Dsonar.projectKey=${{ secrets.YOUR_PROJECT_KEY }}
 
       - name: Check for issues & trigger fix
         env:

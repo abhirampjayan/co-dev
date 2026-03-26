@@ -112,4 +112,4 @@ jobs:
           EOF
 
           # Use file input instead of inline prompt
-          gh copilot suggest "$(cat prompt.txt)"
+          gh copilot suggest -p "$(cat prompt.txt)"

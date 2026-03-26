@@ -93,11 +93,15 @@ jobs:
 
           ISSUES=$(cat issues.json)
 
-          cat > prompt.txt << EOF
+          # Create prompt file instead of using heredoc with special characters
+          cat > prompt.txt << 'EOF'
           You are fixing SonarQube issues. Here are the issues:
-
-          $(cat issues.json)
-
+          EOF
+          
+          cat issues.json >> prompt.txt
+          
+          cat >> prompt.txt << 'EOF'
+          
           Instructions:
           1. Read each flagged file fully before editing
           2. Fix each issue precisely — do NOT refactor unrelated code
@@ -107,4 +111,5 @@ jobs:
           6. DO NOT fix issues by simply adding suppression comments (e.g. /* eslint-disable */, // @ts-ignore, // NOSONAR). You MUST resolve the underlying code smell or bug logically.
           EOF
 
+          # Use file input instead of inline prompt
           gh copilot suggest -p "$(cat prompt.txt)"

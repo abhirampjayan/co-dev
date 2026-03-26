@@ -4,11 +4,8 @@ import Image from "next/image";
 import React, { useState, useEffect } from "react"; // Unused import
 
 export default function Home() {
-  // Code Smell 1: Unused variable
-  const unusedVariable = "This is never used";
-  
   // Code Smell 2: Using 'any' type
-  const [data, setData] = useState<any>(null);
+  const [data] = useState<any>(null);
 
   // Code Smell 3: Empty code block
   try {
@@ -33,36 +30,28 @@ export default function Home() {
   // };
 
   // Code Smell 7: nested loops/callbacks (Cognitive complexity)
-  const calculateMassiveData = () => {
-    let result = 0;
-    if (data !== null) {
-      if (typeof data === 'object') {
-        if (data.items) {
-          for (let i = 0; i < data.items.length; i++) {
-            if (data.items[i].active == true) {
-              if (data.items[i].role === 'admin') {
-                result += 100;
-              } else if (data.items[i].role === 'user') {
-                result += 10;
-                if (data.items[i].premium) {
-                  result += 50;
-                  for (let j = 0; j < 3; j++) {
-                    if (data.items[i].history && data.items[i].history[j]) {
-                       if (data.items[i].history[j].status === 'completed') {
-                         result += 5;
-                       }
-                    }
-                  }
-                }
-              } else {
-                result += 1;
-              }
-            } else {
-              result -= 5;
-            }
-          }
-        }
+  const calculateItemScore = (item: any): number => {
+    if (!item.active) return -5;
+    if (item.role === 'admin') return 100;
+    if (item.role !== 'user') return 1;
+
+    let score = 10;
+    if (!item.premium) return score;
+
+    score += 50;
+    for (let j = 0; j < 3; j++) {
+      if (item.history?.[j]?.status === 'completed') {
+        score += 5;
       }
+    }
+    return score;
+  };
+
+  const calculateMassiveData = (): number => {
+    if (data === null || typeof data !== 'object' || !data.items) return 0;
+    let result = 0;
+    for (const item of data.items) {
+      result += calculateItemScore(item);
     }
     return result;
   };
@@ -77,7 +66,7 @@ export default function Home() {
           <div style={{ padding: '10px', backgroundColor: 'green', color: 'white' }}>
             <span>Metric 1: {status1}</span>
             <button onClick={() => console.log('Metric 1 clicked')}>View Details</button>
-            {data && data.detailed ? (
+            {data?.detailed ? (
                 <div>Loading detailed info...</div>
             ) : null}
           </div>
@@ -92,7 +81,7 @@ export default function Home() {
           <div style={{ padding: '10px', backgroundColor: 'blue', color: 'white' }}>
             <span>Metric 2: {status2}</span>
             <button onClick={() => console.log('Metric 2 clicked')}>View Details</button>
-            {data && data.detailed ? (
+            {data?.detailed ? (
                 <div>Loading detailed info...</div>
             ) : null}
           </div>
@@ -107,7 +96,7 @@ export default function Home() {
           <div style={{ padding: '10px', backgroundColor: 'purple', color: 'white' }}>
             <span>Metric 3: {status3}</span>
             <button onClick={() => console.log('Metric 3 clicked')}>View Details</button>
-            {data && data.detailed ? (
+            {data?.detailed ? (
                 <div>Loading detailed info...</div>
             ) : null}
           </div>
